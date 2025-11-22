@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@300;400;500&display=swap');
+
+@layer base {
+  :root {
+    /* Figma Design Colors */
+    --black: 27 27 27;          /* #1B1B1B */
+    --champagne: 248 246 244;    /* #F8F6F4 */
+    --alabasta: 224 224 212;     /* #E0E0D4 */
+    --alabasta-dark: 125 125 113; /* #7D7D71 */
+    --alabasta-light: 241 241 234; /* #F1F1EA */
+    
+    --background: var(--champagne);
+    --foreground: var(--black);
+    --border: var(--alabasta);
+    --input: var(--alabasta);
+    --ring: var(--alabasta-dark);
+    --primary: var(--black);
+    --primary-foreground: var(--champagne);
+    --secondary: var(--alabasta);
+    --secondary-foreground: var(--black);
+    --muted: var(--alabasta-light);
+    --muted-foreground: var(--alabasta-dark);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 300;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  .font-logo {
+    font-family: 'Noto Serif', serif;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+  }
+
+  .font-body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 300;
+  }
+
+  .font-mono {
+    font-family: 'Courier New', monospace;
+  }
+}
+
+@layer utilities {
+  /* Loading bar animation */
+  @keyframes loading-bar {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-loading-bar {
+    animation: loading-bar 2s ease-in-out infinite;
+  }
+
+  /* Fade in animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+}
