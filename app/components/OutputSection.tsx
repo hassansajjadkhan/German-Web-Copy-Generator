@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AIResponse } from '../lib/schema';
+import jsPDF from 'jspdf';
 
 interface OutputSectionProps {
   aiResponse: AIResponse;
@@ -16,6 +17,10 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
   const [seitenCollapsed, setSeitenCollapsed] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedContent, setEditedContent] = React.useState('');
+  const [showRegenerateModal, setShowRegenerateModal] = React.useState(false);
+  const [showAddPageModal, setShowAddPageModal] = React.useState(false);
+  const [newPageName, setNewPageName] = React.useState('');
+  const [newPageDescription, setNewPageDescription] = React.useState('');
 
   const activePage = aiResponse.pages.find(p => p.slug === activePageSlug) || aiResponse.pages[0];
 
@@ -31,6 +36,60 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
       text += '---\n\n';
     });
     return text;
+  };
+
+  // Export as PDF
+  const exportAsPDF = () => {
+    const doc = new jsPDF();
+    let yPosition = 20;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginLeft = 15;
+    const marginRight = 15;
+    const pageWidth = doc.internal.pageSize.getWidth() - marginLeft - marginRight;
+
+    // Add title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${brandName} - Website Content`, marginLeft, yPosition);
+    yPosition += 15;
+
+    // Add all pages
+    aiResponse.pages.forEach((page) => {
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(page.title, marginLeft, yPosition);
+      yPosition += 10;
+
+      page.sections.forEach((section) => {
+        if (yPosition > pageHeight - 20) {
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(section.heading, marginLeft, yPosition);
+        yPosition += 8;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const splitText = doc.splitTextToSize(section.body, pageWidth);
+        doc.text(splitText, marginLeft, yPosition);
+        yPosition += splitText.length * 5 + 5;
+
+        if (section.cta) {
+          doc.setFont('helvetica', 'italic');
+          doc.text(`CTA: ${section.cta}`, marginLeft, yPosition);
+          yPosition += 8;
+        }
+
+        yPosition += 5;
+      });
+
+      yPosition += 10;
+    });
+
+    doc.save(`${brandName || 'wortgut'}-content.pdf`);
   };
 
   // Copy all content
@@ -59,8 +118,22 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
               onClick={() => setSeitenCollapsed(!seitenCollapsed)}
             >
               <span className="text-sm font-light text-black">Seiten</span>
-              <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center">
-                <span className="text-white text-xs">{seitenCollapsed ? '+' : '−'}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAddPageModal(true);
+                  }}
+                  className="w-5 h-5 rounded-full bg-black flex items-center justify-center hover:bg-gray-800 transition-colors"
+                  title="Neue Seite hinzufügen"
+                >
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+                <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center">
+                  <span className="text-white text-xs">{seitenCollapsed ? '+' : '−'}</span>
+                </div>
               </div>
             </div>
             
@@ -101,31 +174,9 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
             )}
             
             {/* Download PDF Button */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="mt-8 pt-6 border-t border-gray-200\">
               <button
-                onClick={() => {
-                  // Generate PDF content
-                  const pdfContent = aiResponse.pages.map(page => {
-                    let content = `${page.title.toUpperCase()}\n\n`;
-                    page.sections.forEach(section => {
-                      content += `${section.heading}\n\n${section.body}\n\n`;
-                      if (section.cta) content += `Call to Action: ${section.cta}\n\n`;
-                      content += '---\n\n';
-                    });
-                    return content;
-                  }).join('\n\n');
-                  
-                  // Create blob and download
-                  const blob = new Blob([pdfContent], { type: 'text/plain' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${brandName || 'wortgut'}-content.txt`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                }}
+                onClick={exportAsPDF}
                 className="w-full px-4 py-2.5 text-sm bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-light"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +236,7 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
                   Kopieren
                 </button>
                 <button
-                  onClick={onRegenerate}
+                  onClick={() => setShowRegenerateModal(true)}
                   disabled={isRegenerating}
                   className="px-4 py-2 text-sm border border-gray-400 hover:bg-gray-50 transition-colors flex items-center gap-2 font-light disabled:opacity-50"
                 >
@@ -280,6 +331,124 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
           </div>
         </div>
       </div>
+
+      {/* Regenerate Modal */}
+      {showRegenerateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 className="text-lg font-logo font-light text-black mb-4">Inhalte erneut generieren</h3>
+            <p className="text-sm text-gray-700 mb-6 font-light">
+              Wähle die Einstellungen für die neue Generierung:
+            </p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-sm text-gray-600 font-light mb-2 block">Tonalität</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Professionell', 'Locker', 'Freundlich', 'Technisch'].map((tone) => (
+                    <button
+                      key={tone}
+                      className="px-3 py-1.5 text-xs border border-gray-400 hover:bg-black hover:text-white transition-colors font-light"
+                    >
+                      {tone}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600 font-light mb-2 block">Textlänge</label>
+                <div className="flex gap-2">
+                  {['Kurz', 'Standard', 'Ausführlich'].map((length) => (
+                    <button
+                      key={length}
+                      className="flex-1 px-3 py-1.5 text-xs border border-gray-400 hover:bg-black hover:text-white transition-colors font-light"
+                    >
+                      {length}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRegenerateModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-400 text-sm hover:bg-gray-50 transition-colors font-light"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => {
+                  setShowRegenerateModal(false);
+                  onRegenerate();
+                }}
+                className="flex-1 px-4 py-2 bg-black text-white text-sm hover:bg-gray-800 transition-colors font-light"
+              >
+                Regenerieren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Page Modal */}
+      {showAddPageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 className="text-lg font-logo font-light text-black mb-4">Weitere Seite hinzufügen</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-sm text-gray-600 font-light mb-2 block">Name der Seite</label>
+                <input
+                  type="text"
+                  value={newPageName}
+                  onChange={(e) => setNewPageName(e.target.value)}
+                  placeholder="z. B. Portfolio, Team, FAQ"
+                  className="w-full px-3 py-2 border border-gray-300 text-sm font-light focus:border-black focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600 font-light mb-2 block">Beschreibung zur Seite</label>
+                <textarea
+                  value={newPageDescription}
+                  onChange={(e) => setNewPageDescription(e.target.value)}
+                  placeholder="Beschreibe, welche Abschnitte oder Inhalte auf dieser Seite erscheinen sollen..."
+                  className="w-full px-3 py-2 border border-gray-300 text-sm font-light focus:border-black focus:outline-none resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddPageModal(false);
+                  setNewPageName('');
+                  setNewPageDescription('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-400 text-sm hover:bg-gray-50 transition-colors font-light"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implement API call to generate new page
+                  console.log('Adding page:', newPageName, newPageDescription);
+                  setShowAddPageModal(false);
+                  setNewPageName('');
+                  setNewPageDescription('');
+                }}
+                className="flex-1 px-4 py-2 bg-black text-white text-sm hover:bg-gray-800 transition-colors font-light"
+              >
+                Seite hinzufügen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

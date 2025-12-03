@@ -54,7 +54,17 @@ export function buildUserPrompt(input: UserInput): string {
 
 Erstelle ausführliche, detaillierte Texte für folgende Seiten:
 
-1. Startseite (Homepage mit emotionalem Willkommenstext, umfassender Überblick über Angebot, klare Hauptnutzen, Alleinstellungsmerkmale, Vertrauensaufbau)
+1. Startseite - MUST HAVE MINDESTENS 6-8 SEPARATE ABSCHNITTE (Homepage ist die kritischste Seite und muss substantiell sein):
+   a) Hero/Willkommen-Abschnitt: Emotionaler, überzeugender Eröffnungssatz mit klarem Wertversprechen
+   b) Hauptnutzen & Problembewusstsein: Was ist das Kernproblem der Zielgruppe? Wie löst das Angebot es?
+   c) Leistungsübersicht: Kurze Einführung in die 3-5 Hauptleistungen (detaillierte Version auf Leistungen-Seite)
+   d) Alleinstellungsmerkmale: 3-4 konkrete Gründe, warum Kunden dieses Unternehmen wählen sollten
+   e) Vertrauensaufbau: Erfahrung, Zertifizierungen, Erfolgsgeschichten, Kundenanzahl, Branchenerfahrung
+   f) Value Proposition: Welcher konkrete Wert wird geliefert? Messbare Ergebnisse wenn möglich
+   g) Kundentypen/Zielgruppe-Fokus: An wen richten wir uns? Verschiedene Kundengruppen kurz ansprechen
+   h) Starker Call-to-Action: Nächste Schritte klar machen, Engagement aufforderung
+   
+   DIESE 6-8 ABSCHNITTE SIND ERFORDERLICH - nicht weniger! Die Startseite sollte MINDESTENS 1500-2000 Gesamtwörter sein über alle Abschnitte
 
 2. Über uns (Ausführliche Geschichte und Entstehung, Unternehmenswerte mit Erklärungen, Team-Vorstellung, Mission und Vision, Was uns unterscheidet)
 
