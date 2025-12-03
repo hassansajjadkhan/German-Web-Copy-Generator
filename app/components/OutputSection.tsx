@@ -10,9 +10,11 @@ interface OutputSectionProps {
   onReset: () => void;
   onRegenerate: () => void;
   isRegenerating: boolean;
+  userInput?: Record<string, unknown>;
+  onPageAdded?: (updatedResponse: AIResponse) => void;
 }
 
-export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, isRegenerating }: OutputSectionProps) {
+export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, isRegenerating, userInput, onPageAdded }: OutputSectionProps) {
   const [activePageSlug, setActivePageSlug] = React.useState<string>(aiResponse.pages[0]?.slug || 'startseite');
   const [seitenCollapsed, setSeitenCollapsed] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -21,6 +23,7 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
   const [showAddPageModal, setShowAddPageModal] = React.useState(false);
   const [newPageName, setNewPageName] = React.useState('');
   const [newPageDescription, setNewPageDescription] = React.useState('');
+  const [isAddingPage, setIsAddingPage] = React.useState(false);
 
   const activePage = aiResponse.pages.find(p => p.slug === activePageSlug) || aiResponse.pages[0];
 
@@ -95,6 +98,52 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
   // Copy all content
   const copyAllContent = () => {
     navigator.clipboard.writeText(generatePageText());
+  };
+
+  // Add new page
+  const handleAddPage = async () => {
+    if (!newPageName.trim() || !newPageDescription.trim()) {
+      alert('Bitte fülle alle Felder aus');
+      return;
+    }
+
+    setIsAddingPage(true);
+    try {
+      const response = await fetch('/api/pages/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pageName: newPageName,
+          pageDescription: newPageDescription,
+          existingResponse: aiResponse,
+          userInput: userInput,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        alert('Fehler beim Hinzufügen der Seite: ' + data.error);
+        return;
+      }
+
+      // Update the response with the new page
+      if (onPageAdded) {
+        onPageAdded(data.data);
+      }
+
+      // Reset modal
+      setShowAddPageModal(false);
+      setNewPageName('');
+      setNewPageDescription('');
+    } catch (error) {
+      console.error('Error adding page:', error);
+      alert('Fehler beim Hinzufügen der Seite');
+    } finally {
+      setIsAddingPage(false);
+    }
   };
 
   return (
@@ -434,16 +483,11 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
                 Abbrechen
               </button>
               <button
-                onClick={() => {
-                  // TODO: Implement API call to generate new page
-                  console.log('Adding page:', newPageName, newPageDescription);
-                  setShowAddPageModal(false);
-                  setNewPageName('');
-                  setNewPageDescription('');
-                }}
-                className="flex-1 px-4 py-2 bg-black text-white text-sm hover:bg-gray-800 transition-colors font-light"
+                onClick={handleAddPage}
+                disabled={isAddingPage}
+                className="flex-1 px-4 py-2 bg-black text-white text-sm hover:bg-gray-800 transition-colors font-light disabled:opacity-50"
               >
-                Seite hinzufügen
+                {isAddingPage ? 'Wird generiert...' : 'Seite hinzufügen'}
               </button>
             </div>
           </div>

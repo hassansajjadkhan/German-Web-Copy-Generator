@@ -115,6 +115,8 @@ export default function HomePage() {
           onReset={handleReset}
           onRegenerate={handleRegenerate}
           isRegenerating={isLoading}
+          userInput={lastFormData || undefined}
+          onPageAdded={setAiResponse}
         />
       )}
     </main>
