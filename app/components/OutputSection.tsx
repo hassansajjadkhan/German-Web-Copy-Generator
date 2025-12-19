@@ -16,7 +16,6 @@ interface OutputSectionProps {
 
 export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, isRegenerating, userInput, onPageAdded }: OutputSectionProps) {
   const [activePageSlug, setActivePageSlug] = React.useState<string>(aiResponse.pages[0]?.slug || 'startseite');
-  const [seitenCollapsed, setSeitenCollapsed] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editedContent, setEditedContent] = React.useState('');
   const [showRegenerateModal, setShowRegenerateModal] = React.useState(false);
@@ -102,8 +101,13 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
 
   // Add new page
   const handleAddPage = async () => {
-    if (!newPageName.trim() || !newPageDescription.trim()) {
-      alert('Bitte fülle alle Felder aus');
+    if (!newPageName.trim()) {
+      alert('Bitte gebe einen Namen für die neue Seite ein');
+      return;
+    }
+
+    if (!newPageDescription.trim()) {
+      alert('Bitte beschreibe, welche Inhalte auf dieser Seite erscheinen sollen');
       return;
     }
 
@@ -125,7 +129,8 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
       const data = await response.json();
 
       if (!data.ok) {
-        alert('Fehler beim Hinzufügen der Seite: ' + data.error);
+        console.error('API Error:', data);
+        alert('Fehler beim Hinzufügen der Seite: ' + (data.error || 'Unbekannter Fehler'));
         return;
       }
 
@@ -140,7 +145,7 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
       setNewPageDescription('');
     } catch (error) {
       console.error('Error adding page:', error);
-      alert('Fehler beim Hinzufügen der Seite');
+      alert('Fehler beim Hinzufügen der Seite: ' + (error instanceof Error ? error.message : 'Unbekannter Fehler'));
     } finally {
       setIsAddingPage(false);
     }
@@ -161,69 +166,59 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
           
           {/* Navigation */}
           <nav className="space-y-1">
-            {/* Seiten Header with Collapse */}
+            {/* Seiten Header with Add Page Button */}
             <div 
-              className="flex items-center justify-between py-2 cursor-pointer hover:opacity-70"
-              onClick={() => setSeitenCollapsed(!seitenCollapsed)}
+              className="flex items-center justify-between py-2"
             >
               <span className="text-sm font-light text-black">Seiten</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAddPageModal(true);
-                  }}
-                  className="w-5 h-5 rounded-full bg-black flex items-center justify-center hover:bg-gray-800 transition-colors"
-                  title="Neue Seite hinzufügen"
-                >
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-                <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center">
-                  <span className="text-white text-xs">{seitenCollapsed ? '+' : '−'}</span>
-                </div>
-              </div>
+              <button
+                onClick={() => setShowAddPageModal(true)}
+                className="w-6 h-6 rounded-full bg-black flex items-center justify-center hover:bg-gray-800 transition-colors"
+                title="Neue Seite hinzufügen"
+              >
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
             </div>
             
             {/* Page List */}
-            {!seitenCollapsed && (
-              <div className="pl-0 space-y-0.5 mt-2">
-                {aiResponse.pages.map((page) => {
-                  const pageLabels: Record<string, string> = {
-                    'startseite': 'Homepage',
-                    'ueber-uns': 'About',
-                    'leistungen': 'Angebote',
-                    'preise': 'Portfolio',
-                    'kontakt': 'Kontakt',
-                    'faq': 'FAQ',
-                    'rechtliches': 'Shop'
-                  };
-                  
-                  return (
-                    <button
-                      key={page.slug}
-                      onClick={() => setActivePageSlug(page.slug)}
-                      className={`block w-full text-left px-3 py-2 text-base font-light transition-colors ${
-                        activePageSlug === page.slug 
-                          ? 'bg-gray-100 text-black' 
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <span className="flex items-center justify-between">
-                        {pageLabels[page.slug] || page.title}
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <div className="pl-0 space-y-0.5 mt-2">
+              {aiResponse.pages.map((page) => {
+                const pageLabels: Record<string, string> = {
+                  'startseite': 'Homepage',
+                  'ueber-uns': 'About',
+                  'leistungen': 'Angebote',
+                  'preise': 'Portfolio',
+                  'kontakt': 'Kontakt',
+                  'faq': 'FAQ',
+                  'rechtliches': 'Shop'
+                };
+                
+                return (
+                  <button
+                    key={page.slug}
+                    onClick={() => setActivePageSlug(page.slug)}
+                    className={`block w-full text-left px-3 py-2 text-base font-light transition-colors ${
+                      activePageSlug === page.slug 
+                        ? 'bg-gray-100 text-black' 
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between">
+                      {pageLabels[page.slug] || page.title}
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             
             {/* Download PDF Button */}
-            <div className="mt-8 pt-6 border-t border-gray-200\">
+            <div className="mt-8 pt-6 border-t border-gray-200">
               <button
                 onClick={exportAsPDF}
                 className="w-full px-4 py-2.5 text-sm bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 font-light"
@@ -231,7 +226,7 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Als PDF herunterladen
+                PDF
               </button>
             </div>
           </nav>
@@ -271,9 +266,9 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
                   className="px-4 py-2 text-sm border border-gray-400 hover:bg-gray-50 transition-colors flex items-center gap-2 font-light"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  Anpassen
+                  Bearbeiten
                 </button>
                 <button
                   onClick={copyAllContent}
@@ -292,7 +287,7 @@ export function OutputSection({ aiResponse, brandName, onReset, onRegenerate, is
                   <svg className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  {isRegenerating ? 'Wird generiert...' : 'Regenerieren'}
+                  Neu
                 </button>
               </div>
             </div>
